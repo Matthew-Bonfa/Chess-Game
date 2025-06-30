@@ -1,0 +1,14 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+#define BOARD_ROWS 8
+#define BOARD_COLS 8
+#define BOARD_SQUARES BOARD_ROWS *BOARD_COLS
+
+#define SQUARE_EDGES 8
+#define SQUARE_INDICES 6
+
+#define PRIMARY_COLOR "#769656"
+#define SECONDARY_COLOR "#eeeed2"
+
+#endif
