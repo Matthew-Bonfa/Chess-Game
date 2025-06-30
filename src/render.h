@@ -18,9 +18,10 @@ typedef struct {
 
 int init_renderer();
 Shape create_shape(float *vertices, size_t vertex_count, unsigned int *indices, size_t index_count);
+void draw_shape(Shape *shape, color_t *color);
 void destroy_shape(Shape shape);
 void cleanup_renderer();
-void draw_image(const Image *img);
+void draw_image(Image *img);
 GLuint get_shape_shader();
 GLuint get_texture_shader();
 

@@ -11,6 +11,7 @@ find_package(OpenGL REQUIRED)
 
 add_executable(chess
     src/main.c
+    src/game.c
     src/render.c
     src/image.c
     src/board.c

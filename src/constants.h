@@ -11,4 +11,26 @@
 #define PRIMARY_COLOR "#769656"
 #define SECONDARY_COLOR "#eeeed2"
 
+#define WHITE_EMPTY 0
+#define BLACK_EMPTY 8
+
+#define WHITE_PAWN 1
+#define WHITE_KNIGHT 2
+#define WHITE_BISHOP 3
+#define WHITE_ROOK 4
+#define WHITE_QUEEN 5
+#define WHITE_KING 6
+
+#define BLACK_PAWN 9
+#define BLACK_KNIGHT 10
+#define BLACK_BISHOP 11
+#define BLACK_ROOK 12
+#define BLACK_QUEEN 13
+#define BLACK_KING 14
+
+#define SIZE_BITS 4
+#define BIT_MASK 15
+
+#define NUM_STARTING_PIECES 32
+
 #endif

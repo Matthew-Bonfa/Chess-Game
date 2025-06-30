@@ -90,11 +90,11 @@ Shape create_shape(float *vertices, size_t vertex_count, unsigned int *indices, 
     return shape;
 }
 
-void draw_shape(Shape *shape, color_t color) {
+void draw_shape(Shape *shape, color_t *color) {
     glUseProgram(shape_shader_program);
 
     int colorLoc = glGetUniformLocation(shape_shader_program, "uColor");
-    glUniform3f(colorLoc, color.r, color.g, color.b);
+    glUniform3f(colorLoc, color->r, color->g, color->b);
 
     glBindVertexArray(shape->vao);
     glDrawElements(GL_TRIANGLES, shape->index_count, GL_UNSIGNED_INT, 0);
@@ -106,7 +106,7 @@ void destroy_shape(Shape shape) {
     glDeleteBuffers(1, &shape.ebo);
 }
 
-void draw_image(const Image *img) {
+void draw_image(Image *img) {
     glUseProgram(texture_shader_program);
     glBindTexture(GL_TEXTURE_2D, img->texture_id);
     glBindVertexArray(img->vao);
