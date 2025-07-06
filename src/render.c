@@ -3,12 +3,12 @@
 static GLuint shape_shader_program;
 static GLuint texture_shader_program;
 
-static int compile_shader(unsigned int type, const char *source) {
-    unsigned int shader = glCreateShader(type);
+static int32_t compile_shader(uint32_t type, const char *source) {
+    uint32_t shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
 
-    int success;
+    int32_t success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         char infoLog[512];
@@ -19,7 +19,7 @@ static int compile_shader(unsigned int type, const char *source) {
     return shader;
 }
 
-int init_renderer() {
+int32_t init_renderer() {
     // Load shape shader
     char *vertex_shader_src = load_shader_source("./src/shaders/vertex_shader.glsl");
     char *fragment_shader_src = load_shader_source("./src/shaders/fragment_shader.glsl");
@@ -67,7 +67,7 @@ int init_renderer() {
     return 1;
 }
 
-Shape create_shape(float *vertices, size_t vertex_count, unsigned int *indices, size_t index_count) {
+Shape create_shape(float *vertices, size_t vertex_count, uint32_t *indices, size_t index_count) {
     Shape shape;
     glGenVertexArrays(1, &shape.vao);
     glGenBuffers(1, &shape.vbo);
@@ -80,7 +80,7 @@ Shape create_shape(float *vertices, size_t vertex_count, unsigned int *indices, 
     glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(float), vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
@@ -93,7 +93,7 @@ Shape create_shape(float *vertices, size_t vertex_count, unsigned int *indices, 
 void draw_shape(Shape *shape, color_t *color) {
     glUseProgram(shape_shader_program);
 
-    int colorLoc = glGetUniformLocation(shape_shader_program, "uColor");
+    int32_t colorLoc = glGetUniformLocation(shape_shader_program, "uColor");
     glUniform3f(colorLoc, color->r, color->g, color->b);
 
     glBindVertexArray(shape->vao);

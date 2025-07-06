@@ -10,14 +10,14 @@
 #include <stdlib.h>
 
 typedef struct {
-    unsigned int vao;
-    unsigned int vbo;
-    unsigned int ebo;
-    unsigned int index_count;
+    uint32_t vao;
+    uint32_t vbo;
+    uint32_t ebo;
+    uint32_t index_count;
 } Shape;
 
-int init_renderer();
-Shape create_shape(float *vertices, size_t vertex_count, unsigned int *indices, size_t index_count);
+int32_t init_renderer();
+Shape create_shape(float *vertices, size_t vertex_count, uint32_t *indices, size_t index_count);
 void draw_shape(Shape *shape, color_t *color);
 void destroy_shape(Shape shape);
 void cleanup_renderer();

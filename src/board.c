@@ -1,10 +1,10 @@
 #include "board.h"
 
-color_t *primary_color, *secondary_color = NULL;
+color_t *primary_color, *secondary_color, *primary_selected, *secondary_selected = NULL;
 
-static Square make_square(GLFWwindow *window, unsigned int x, unsigned int y, float size) {
+static Square make_square(GLFWwindow *window, uint32_t x, uint32_t y, float size) {
     float square[SQUARE_EDGES];
-    unsigned int square_indices[SQUARE_INDICES];
+    uint32_t square_indices[SQUARE_INDICES];
     get_square_cooridnates_px(window, x, y, size, square, square_indices);
 
     Square new_square;
@@ -21,9 +21,9 @@ Square *init_board(GLFWwindow *window) {
     float x_shift, y_shift;
     float square_size = get_square_size(window, &x_shift, &y_shift);
 
-    int square_num = 0;
-    for (int c = 0; c < BOARD_COLS; c++) {
-        for (int r = 0; r < BOARD_ROWS; r++) {
+    int32_t square_num = 0;
+    for (int32_t c = 0; c < BOARD_COLS; c++) {
+        for (int32_t r = 0; r < BOARD_ROWS; r++) {
             board[square_num] = make_square(window, r * square_size + x_shift, c * square_size + y_shift, square_size);
             square_num++;
         }
@@ -32,15 +32,19 @@ Square *init_board(GLFWwindow *window) {
     if (primary_color == NULL || secondary_color == NULL) {
         primary_color = malloc(sizeof(color_t));
         secondary_color = malloc(sizeof(color_t));
+        primary_selected = malloc(sizeof(color_t));
+        secondary_selected = malloc(sizeof(color_t));
         hex_to_rgbf(PRIMARY_COLOR, primary_color);
         hex_to_rgbf(SECONDARY_COLOR, secondary_color);
+        hex_to_rgbf(PRIMARY_SELECTED, primary_selected);
+        hex_to_rgbf(SECONDARY_SELECETED, secondary_selected);
     }
 
     return board;
 }
 
 void clear_board(Square *board, Pieces *pieces) {
-    for (int i = 0; i < BOARD_SQUARES; i++) {
+    for (int32_t i = 0; i < BOARD_SQUARES; i++) {
         destroy_shape(board[i].shape);
     }
     // if (primary_color != NULL) {
@@ -49,8 +53,14 @@ void clear_board(Square *board, Pieces *pieces) {
     // if (secondary_color != NULL) {
     //     free(secondary_color);
     // }
+    // if (primary_selected != NULL) {
+    //     free(primary_selected);
+    // }
+    // if (secondary_selected != NULL) {
+    //     free(secondary_selected);
+    // }
     if (pieces != NULL) {
-        for (int i = 0; i < pieces->length; i++) {
+        for (int32_t i = 0; i < pieces->length; i++) {
             destroy_image(pieces->pieces[i]);
         }
         if (pieces->pieces != NULL) {
@@ -61,31 +71,48 @@ void clear_board(Square *board, Pieces *pieces) {
     free(board);
 }
 
-void draw_board(Square *board) {
-    int index = 0;
-    for (int r = 0; r < BOARD_ROWS; r++) {
-        for (int c = 0; c < BOARD_COLS; c++) {
+// void draw_board(Square *board, int32_t selected) {
+//     int32_t index = 0;
+//     for (int32_t r = 0; r < BOARD_ROWS; r++) {
+//         for (int32_t c = 0; c < BOARD_COLS; c++) {
+//             if ((r + c) % 2 == 0) {
+//                 draw_shape(&(board[index].shape), secondary_color);
+//             } else {
+//                 draw_shape(&(board[index].shape), primary_color);
+//             }
+//             index++;
+//         }
+//     }
+// }
+
+void draw_board(Square *board, int32_t selected) {
+    int32_t index = 0;
+    for (int32_t r = 0; r < BOARD_ROWS; r++) {
+        for (int32_t c = 0; c < BOARD_COLS; c++) {
             if ((r + c) % 2 == 0) {
-                draw_shape(&(board[index].shape), secondary_color);
+                if (index == selected) {
+                    draw_shape(&(board[index].shape), secondary_selected);
+                } else {
+                    draw_shape(&(board[index].shape), secondary_color);
+                }
             } else {
-                draw_shape(&(board[index].shape), primary_color);
+                if (index == selected) {
+                    draw_shape(&(board[index].shape), primary_selected);
+                } else {
+                    draw_shape(&(board[index].shape), primary_color);
+                }
             }
             index++;
         }
     }
 }
 
-Pieces *init_pieces(GLFWwindow *window, Square *board, int *game_state) {
+Pieces *init_pieces(GLFWwindow *window, Square *board, int32_t *game_state) {
     Pieces *pieces = (Pieces *)malloc(sizeof(Pieces));
     Image *images = (Image *)malloc(NUM_STARTING_PIECES * sizeof(Image));
 
-    // printf("%d\n", get_piece(game_state, 7));
-    // printf("%d\n", get_piece(game_state, 15));
-    // printf("%d\n", get_piece(game_state, 0));
-    // printf("%d\n", get_piece(game_state, 8));
-
-    int index = 0;
-    for (int i = 0; i < BOARD_SQUARES; i++) {
+    int32_t index = 0;
+    for (int32_t i = 0; i < BOARD_SQUARES; i++) {
         switch (get_piece(game_state, i)) {
         case WHITE_EMPTY:
             break;
@@ -149,7 +176,23 @@ Pieces *init_pieces(GLFWwindow *window, Square *board, int *game_state) {
 }
 
 void draw_pieces(Pieces *pieces) {
-    for (int i = 0; i < pieces->length; i++) {
+    for (int32_t i = 0; i < pieces->length; i++) {
         draw_image(&pieces->pieces[i]);
     }
+}
+
+uint16_t get_square(GLFWwindow *window, float xpos, float ypos) {
+    float x_shift, y_shift;
+    int32_t board_size = get_board_size(window, &x_shift, &y_shift);
+
+    if (xpos < x_shift || xpos > board_size + x_shift || ypos < y_shift || ypos > board_size + y_shift) {
+        return INVALID_SQUARE;
+    }
+
+    float square_size = (float)board_size / 8;
+
+    int32_t row = (int32_t)(ypos - y_shift) / square_size;
+    int32_t col = (int32_t)(xpos - x_shift) / square_size;
+
+    return 8 * row + col;
 }

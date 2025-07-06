@@ -10,7 +10,7 @@ const float uvs[8] = {
     0.0f, 1.0f  // top-left
 };
 
-Image load_image(const char *filepath, GLFWwindow *window, unsigned int x, unsigned int y, float size) {
+Image load_image(const char *filepath, GLFWwindow *window, uint32_t x, uint32_t y, float size) {
     Image img;
 
     unsigned char *data = stbi_load(filepath, &img.width, &img.height, &img.channels, STBI_rgb_alpha);
@@ -57,12 +57,12 @@ Image load_image(const char *filepath, GLFWwindow *window, unsigned int x, unsig
     stbi_image_free(data);
 
     float vertices[SQUARE_EDGES];
-    unsigned int indices[SQUARE_INDICES];
+    uint32_t indices[SQUARE_INDICES];
     get_square_cooridnates_px(window, x, y, size, vertices, indices);
 
     float interleaved[2 * SQUARE_EDGES];
 
-    for (int i = 0; i < 4; i++) {
+    for (int32_t i = 0; i < 4; i++) {
         interleaved[i * 4 + 0] = vertices[i * 2 + 0];
         interleaved[i * 4 + 1] = vertices[i * 2 + 1];
         interleaved[i * 4 + 2] = uvs[i * 2 + 0];
