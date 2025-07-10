@@ -44,6 +44,7 @@
 
 #define INVALID_SQUARE 64
 #define INVALID_MOVE 0
+#define INVALID_PIECE -1
 #define VALID_MOVE 1
 #define MOVE_FAIL 0
 #define MOVE_SUCCESS 1

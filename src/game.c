@@ -13,7 +13,7 @@ static void print_bits_long(uint64_t num) {
 
 int16_t get_piece(uint32_t *game_state, uint16_t loc) {
     if (loc < 0 || loc > 63) {
-        return -1;
+        return INVALID_PIECE;
     }
     uint16_t row = loc / BOARD_ROWS;
     uint16_t pos = (BOARD_COLS - 1 - loc % BOARD_COLS) * SIZE_BITS;
@@ -117,7 +117,7 @@ void set_piece_moved(uint16_t *game_condition, uint16_t piece, int32_t location)
     }
 }
 
-int32_t piece_in_direction(uint32_t *game_state, int32_t loc, Direction direction) {
+int16_t piece_in_direction(uint32_t *game_state, int32_t loc, Direction direction) {
     do {
         loc += direction;
         if (loc < 0 || loc > 63) {
@@ -169,6 +169,8 @@ void update_legal_moves(uint32_t *game_state, uint16_t *game_condition, uint64_t
     for (int32_t i = 0; i < BOARD_SQUARES; i++) {
         legal_moves[i] = get_legal_moves(game_state, game_condition, i);
     }
+    do_checks(game_state, legal_moves, WHITE);
+    do_checks(game_state, legal_moves, BLACK);
 }
 
 uint16_t check_valid_move(uint32_t *game_state, uint16_t *game_condition, uint64_t *legal_moves, int32_t loc, int32_t dest) {
@@ -194,19 +196,24 @@ uint16_t check_valid_move(uint32_t *game_state, uint16_t *game_condition, uint64
 }
 
 uint16_t make_move(uint32_t *game_state, uint16_t *game_condition, uint64_t *legal_moves, int32_t *selected_square, int32_t *clicked_square) {
+    int16_t clicked_piece = get_piece(game_state, *clicked_square);
+
     if (*selected_square == -1) {
-        int16_t clicked_piece = get_piece(game_state, *clicked_square);
         if (clicked_piece != WHITE_EMPTY && clicked_piece != BLACK_EMPTY) {
             *selected_square = *clicked_square;
         }
         return MOVE_FAIL;
     }
+
     int16_t selected_piece = get_piece(game_state, *selected_square);
 
+    if (clicked_piece != WHITE_EMPTY && clicked_piece != BLACK_EMPTY && (selected_piece & COLOR_BIT_MASK) == (clicked_piece & COLOR_BIT_MASK)) {
+        *selected_square = *clicked_square;
+        return MOVE_FAIL;
+    }
+
     if (check_valid_move(game_state, game_condition, legal_moves, *selected_square, *clicked_square)) {
-        printf("Doing move!\n");
         if (selected_piece == WHITE_KING && abs(*clicked_square - *selected_square) == 2 || selected_piece == BLACK_KING && abs(*clicked_square - *selected_square) == 2) {
-            printf("Castles!\n");
             do_castles(game_state, *selected_square, *clicked_square);
         } else {
             move_piece(game_state, *selected_square, *clicked_square);
@@ -215,7 +222,8 @@ uint16_t make_move(uint32_t *game_state, uint16_t *game_condition, uint64_t *leg
         if (selected_piece == WHITE_ROOK || selected_piece == BLACK_ROOK || selected_piece == WHITE_KING || selected_piece == BLACK_KING) {
             set_piece_moved(game_condition, selected_piece, *selected_square);
         }
-        printf("%d\n", *game_condition);
+
+        // printf("%d\n", *game_condition);
 
         update_legal_moves(game_state, game_condition, legal_moves);
         // for (int i = 0; i < 64; i++) {
@@ -225,6 +233,7 @@ uint16_t make_move(uint32_t *game_state, uint16_t *game_condition, uint64_t *leg
         *selected_square = -1;
         return MOVE_SUCCESS;
     } else {
+        *selected_square = -1;
         return MOVE_FAIL;
     }
 }
