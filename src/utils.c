@@ -1,5 +1,8 @@
 #include "utils.h"
 
+char cols[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+char rows[] = {'8', '7', '6', '5', '4', '3', '2', '1'};
+
 const uint32_t square_indices[SQUARE_INDICES] = {
     0, 1, 2,
     2, 3, 0};
@@ -105,4 +108,92 @@ int32_t get_board_size(GLFWwindow *window, float *x_shift, float *y_shift) {
 float get_square_size(GLFWwindow *window, float *x_shift, float *y_shift) {
     int32_t board_size = get_board_size(window, x_shift, y_shift);
     return (float)board_size / 8;
+}
+
+void clear_game_state(uint32_t *game_state) {
+    for (int i = 0; i < BOARD_ROWS; i++) {
+        game_state[i] = 0;
+    }
+}
+
+uint8_t char_to_piece(char c) {
+    int is_white = isupper(c);
+    char piece = tolower(c);
+
+    switch (piece) {
+    case 'p':
+        return is_white ? WHITE_PAWN : BLACK_PAWN;
+    case 'n':
+        return is_white ? WHITE_KNIGHT : BLACK_KNIGHT;
+    case 'b':
+        return is_white ? WHITE_BISHOP : BLACK_BISHOP;
+    case 'r':
+        return is_white ? WHITE_ROOK : BLACK_ROOK;
+    case 'q':
+        return is_white ? WHITE_QUEEN : BLACK_QUEEN;
+    case 'k':
+        return is_white ? WHITE_KING : BLACK_KING;
+    default:
+        return WHITE_EMPTY;
+    }
+}
+
+void load_fen_position(const char *fen, uint32_t *game_state) {
+    clear_game_state(game_state);
+
+    int row = 0;
+    int col = 0;
+    const char *ptr = fen;
+
+    while (*ptr && row < BOARD_ROWS) {
+        if (*ptr == '/') {
+            row++;
+            col = 0;
+            ptr++;
+            continue;
+        }
+
+        if (isdigit(*ptr)) {
+            col += *ptr - '0';
+            ptr++;
+        } else {
+            uint8_t piece = char_to_piece(*ptr);
+            if (col < BOARD_COLS) {
+                int square = row * BOARD_COLS + col;
+                set_piece(game_state, square, piece);
+                col++;
+            }
+            ptr++;
+        }
+    }
+}
+
+void print_location(int16_t loc) {
+    if (loc == INVALID_PIECE) {
+        printf("unselected ");
+        return;
+    }
+    printf("%c%c ", cols[loc % BOARD_COLS], rows[loc / BOARD_ROWS]);
+}
+
+void print_bits_long(uint64_t num) {
+    printf("------------\n");
+    for (int i = 0; i < BOARD_ROWS; i++) {
+        for (int j = 0; j < BOARD_COLS; j++) {
+            printf("%I64d ", (num & (uint64_t)1 << (BOARD_ROWS * i + j)) >> (BOARD_ROWS * i + j));
+        }
+        printf("\n");
+    }
+    printf("------------\n");
+}
+
+void print_board(uint32_t *game_state) {
+    printf("------------\n");
+    for (int i = 0; i < BOARD_ROWS; i++) {
+        for (int j = 0; j < BOARD_COLS; j++) {
+            printf("%d ", get_piece(game_state, BOARD_ROWS * i + j));
+        }
+        printf("\n");
+    }
+    printf("------------\n");
 }

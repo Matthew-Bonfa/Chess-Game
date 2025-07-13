@@ -7,10 +7,12 @@
 
 #include "board.h"
 #include "render.h"
+#include "utils.h"
 
 Square *board;
 Pieces *pieces;
-int32_t selected = -1;
+Moves *dots;
+int32_t selected = UNSELECTED;
 
 uint32_t game_state[] = {
     3401444268,
@@ -23,32 +25,11 @@ uint32_t game_state[] = {
     1110795044,
 };
 
+uint32_t prev_game_state[8];
 uint16_t game_condition = 0;
-// int32_t game_condition = 288620543;
-
 uint64_t legal_moves[BOARD_SQUARES];
 
-char cols[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
-char rows[] = {'8', '7', '6', '5', '4', '3', '2', '1'};
-
-static void print_location(int16_t loc) {
-    if (loc == -1) {
-        printf("unselected ");
-        return;
-    }
-    printf("%c%c ", cols[loc % 8], rows[loc / 8]);
-}
-
-static void print_bits_long(uint64_t num) {
-    printf("------------\n");
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            printf("%d ", (num & (uint64_t)1 << (8 * i + j)) >> (8 * i + j));
-        }
-        printf("\n");
-    }
-    printf("------------\n");
-}
+uint16_t color_to_move = WHITE;
 
 static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t action, int32_t mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -58,10 +39,11 @@ static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int3
 
 static void framebuffer_size_callback(GLFWwindow *window, int32_t width, int32_t height) {
     if (board != NULL) {
-        clear_board(board, pieces);
+        clear_board(board, pieces, dots);
     }
     board = init_board(window);
     pieces = init_pieces(window, board, game_state);
+    dots = init_dots(window, board);
     glViewport(0, 0, width, height);
     // printf("Window resized: %d x %d\n", width, height);
 }
@@ -73,28 +55,25 @@ static void mouse_button_callback(GLFWwindow *window, int32_t button, int32_t ac
         convert_to_px(window, &xpos, &ypos);
 
         int32_t clicked_square = get_square(window, xpos, ypos);
-        if (clicked_square < 0 || clicked_square > 63) {
+        if (clicked_square < 0 || clicked_square >= BOARD_SQUARES) {
             return;
         }
         if (selected == clicked_square) {
-            selected = -1;
+            selected = UNSELECTED;
             return;
         }
-        // if (selected != -1) {
-        //     print_bits_long(selected);
-        // }
 
-        // printf("%d, %d\n", clicked_square, selected);
-        print_location(clicked_square);
-        print_location(selected);
-        printf("%d\n", get_piece(game_state, clicked_square));
-        printf("\n");
+        // print_location(clicked_square);
+        // print_location(selected);
+        // printf("%d\n", get_piece(game_state, clicked_square));
+        // printf("\n");
 
-        if (make_move(game_state, &game_condition, legal_moves, &selected, &clicked_square)) {
-            // update_legal_moves(game_state, &game_condition, legal_moves);
-            // for (int i = 0; i < 64; i++) {
-            //     print_bits_long(legal_moves[i]);
-            // }
+        if (make_move(game_state, &game_condition, legal_moves, &selected, &clicked_square, &color_to_move, prev_game_state)) {
+            if (color_to_move == WHITE) {
+                color_to_move = BLACK;
+            } else {
+                color_to_move = WHITE;
+            }
         }
         pieces = init_pieces(window, board, game_state);
         board = init_board(window);
@@ -136,28 +115,29 @@ int32_t main() {
 
     board = init_board(window);
     pieces = init_pieces(window, board, game_state);
+    dots = init_dots(window, board);
 
     for (int32_t i = 0; i < BOARD_SQUARES; i++) {
         legal_moves[i] = 0;
     }
-    update_legal_moves(game_state, &game_condition, legal_moves);
-
-    // update_legal_moves(game_state, &game_condition, legal_moves);
-    //  for (int i = 0; i < 64; i++) {
-    //      print_bits_long(legal_moves[i]);
-    //  }
+    update_legal_moves(game_state, &game_condition, legal_moves, prev_game_state, color_to_move);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         draw_board(board, selected);
+        if (selected != -1) {
+            draw_dots(dots, game_state, legal_moves, selected);
+        }
         draw_pieces(pieces);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     cleanup_renderer();
-    clear_board(board, pieces);
+    clear_board(board, pieces, dots);
+    free_colors();
 
     glfwDestroyWindow(window);
     glfwTerminate();

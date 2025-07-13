@@ -43,48 +43,6 @@ Square *init_board(GLFWwindow *window) {
     return board;
 }
 
-void clear_board(Square *board, Pieces *pieces) {
-    for (int32_t i = 0; i < BOARD_SQUARES; i++) {
-        destroy_shape(board[i].shape);
-    }
-    // if (primary_color != NULL) {
-    //     free(primary_color);
-    // }
-    // if (secondary_color != NULL) {
-    //     free(secondary_color);
-    // }
-    // if (primary_selected != NULL) {
-    //     free(primary_selected);
-    // }
-    // if (secondary_selected != NULL) {
-    //     free(secondary_selected);
-    // }
-    if (pieces != NULL) {
-        for (int32_t i = 0; i < pieces->length; i++) {
-            destroy_image(pieces->pieces[i]);
-        }
-        if (pieces->pieces != NULL) {
-            free(pieces->pieces);
-        }
-        free(pieces);
-    }
-    free(board);
-}
-
-// void draw_board(Square *board, int32_t selected) {
-//     int32_t index = 0;
-//     for (int32_t r = 0; r < BOARD_ROWS; r++) {
-//         for (int32_t c = 0; c < BOARD_COLS; c++) {
-//             if ((r + c) % 2 == 0) {
-//                 draw_shape(&(board[index].shape), secondary_color);
-//             } else {
-//                 draw_shape(&(board[index].shape), primary_color);
-//             }
-//             index++;
-//         }
-//     }
-// }
-
 void draw_board(Square *board, int32_t selected) {
     int32_t index = 0;
     for (int32_t r = 0; r < BOARD_ROWS; r++) {
@@ -181,6 +139,32 @@ void draw_pieces(Pieces *pieces) {
     }
 }
 
+Moves *init_dots(GLFWwindow *window, Square *board) {
+    Image *dots = (Image *)malloc(BOARD_SQUARES * sizeof(Image));
+    Image *rings = (Image *)malloc(BOARD_SQUARES * sizeof(Image));
+    Moves *moves = (Moves *)malloc(sizeof(Moves));
+    for (int i = 0; i < BOARD_SQUARES; i++) {
+        dots[i] = load_image("./assets/dot.png", window, board[i].x, board[i].y, board[i].size);
+        rings[i] = load_image("./assets/ring.png", window, board[i].x, board[i].y, board[i].size);
+    }
+    moves->dots = dots;
+    moves->rings = rings;
+    return moves;
+}
+
+void draw_dots(Moves *moves, uint32_t *game_state, uint64_t *legal_moves, uint16_t loc) {
+    int16_t piece = get_piece(game_state, loc);
+    for (int i = 0; i < BOARD_SQUARES; i++) {
+        if (legal_moves[loc] & (uint64_t)1 << i) {
+            if (get_piece(game_state, i) == WHITE_EMPTY || get_piece(game_state, i) == BLACK_EMPTY) {
+                draw_image(&(moves->dots[i]));
+            } else if ((get_piece(game_state, i) & COLOR_BIT_MASK) != (piece & COLOR_BIT_MASK)) {
+                draw_image(&(moves->rings[i]));
+            }
+        }
+    }
+}
+
 uint16_t get_square(GLFWwindow *window, float xpos, float ypos) {
     float x_shift, y_shift;
     int32_t board_size = get_board_size(window, &x_shift, &y_shift);
@@ -189,10 +173,48 @@ uint16_t get_square(GLFWwindow *window, float xpos, float ypos) {
         return INVALID_SQUARE;
     }
 
-    float square_size = (float)board_size / 8;
+    float square_size = (float)board_size / BOARD_ROWS;
 
     int32_t row = (int32_t)(ypos - y_shift) / square_size;
     int32_t col = (int32_t)(xpos - x_shift) / square_size;
 
-    return 8 * row + col;
+    return BOARD_ROWS * row + col;
+}
+
+void clear_board(Square *board, Pieces *pieces, Moves *dots) {
+    for (int32_t i = 0; i < BOARD_SQUARES; i++) {
+        destroy_shape(board[i].shape);
+    }
+    if (pieces != NULL) {
+        for (int32_t i = 0; i < pieces->length; i++) {
+            destroy_image(pieces->pieces[i]);
+        }
+        if (pieces->pieces != NULL) {
+            free(pieces->pieces);
+        }
+        free(pieces);
+    }
+    if (dots != NULL) {
+        for (int i = 0; i < BOARD_SQUARES; i++) {
+            destroy_image(dots->dots[i]);
+            destroy_image(dots->rings[i]);
+        }
+        free(dots);
+    }
+    free(board);
+}
+
+void free_colors() {
+    if (primary_color != NULL) {
+        free(primary_color);
+    }
+    if (secondary_color != NULL) {
+        free(secondary_color);
+    }
+    if (primary_selected != NULL) {
+        free(primary_selected);
+    }
+    if (secondary_selected != NULL) {
+        free(secondary_selected);
+    }
 }
