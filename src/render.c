@@ -20,6 +20,9 @@ static int32_t compile_shader(uint32_t type, const char *source) {
 }
 
 int32_t init_renderer() {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Load shape shader
     char *vertex_shader_src = load_shader_source("./src/shaders/vertex_shader.glsl");
     char *fragment_shader_src = load_shader_source("./src/shaders/fragment_shader.glsl");
@@ -63,7 +66,6 @@ int32_t init_renderer() {
     glDeleteShader(tex_fs);
     free(tex_vert);
     free(tex_frag);
-
     return 1;
 }
 
@@ -108,9 +110,21 @@ void destroy_shape(Shape shape) {
 
 void draw_image(Image *img) {
     glUseProgram(texture_shader_program);
+    glUniform1i(glGetUniformLocation(texture_shader_program, "uTexture"), 0);
+
     glBindTexture(GL_TEXTURE_2D, img->texture_id);
     glBindVertexArray(img->vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void draw_char(TextChar *ch) {
+    glUseProgram(texture_shader_program);
+    glUniform1i(glGetUniformLocation(texture_shader_program, "uTexture"), 0);
+
+    glBindTexture(GL_TEXTURE_2D, ch->texture_id);
+    glBindVertexArray(ch->vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 void cleanup_renderer() {

@@ -15,6 +15,7 @@ add_executable(chess
     src/game.c
     src/render.c
     src/image.c
+    src/text.c
     src/board.c
     src/utils.c
 )

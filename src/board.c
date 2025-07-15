@@ -5,7 +5,7 @@ color_t *primary_color, *secondary_color, *primary_selected, *secondary_selected
 static Square make_square(GLFWwindow *window, uint32_t x, uint32_t y, float size) {
     float square[SQUARE_EDGES];
     uint32_t square_indices[SQUARE_INDICES];
-    get_square_cooridnates_px(window, x, y, size, square, square_indices);
+    get_square_coordinates_px(window, x, y, size, square, square_indices);
 
     Square new_square;
     new_square.shape = create_shape(square, SQUARE_EDGES, square_indices, SQUARE_INDICES);
@@ -75,53 +75,53 @@ Pieces *init_pieces(GLFWwindow *window, Square *board, int32_t *game_state) {
         case WHITE_EMPTY:
             break;
         case WHITE_PAWN:
-            images[index] = load_image("./assets/white-pawn.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_WHITE_PAWN, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case WHITE_KNIGHT:
-            images[index] = load_image("./assets/white-knight.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_WHITE_KNIGHT, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case WHITE_BISHOP:
-            images[index] = load_image("./assets/white-bishop.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_WHITE_BISHOP, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case WHITE_ROOK:
-            images[index] = load_image("./assets/white-rook.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_WHITE_ROOK, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case WHITE_QUEEN:
-            images[index] = load_image("./assets/white-queen.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_WHITE_QUEEN, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case WHITE_KING:
-            images[index] = load_image("./assets/white-king.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_WHITE_KING, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case BLACK_EMPTY:
             break;
         case BLACK_PAWN:
-            images[index] = load_image("./assets/black-pawn.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_BLACK_PAWN, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case BLACK_KNIGHT:
-            images[index] = load_image("./assets/black-knight.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_BLACK_KNIGHT, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case BLACK_BISHOP:
-            images[index] = load_image("./assets/black-bishop.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_BLACK_BISHOP, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case BLACK_ROOK:
-            images[index] = load_image("./assets/black-rook.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_BLACK_ROOK, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case BLACK_QUEEN:
-            images[index] = load_image("./assets/black-queen.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_BLACK_QUEEN, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         case BLACK_KING:
-            images[index] = load_image("./assets/black-king.png", window, board[i].x, board[i].y, board[i].size);
+            images[index] = create_image(TEX_BLACK_KING, window, board[i].x, board[i].y, board[i].size);
             index++;
             break;
         default:
@@ -144,8 +144,8 @@ Moves *init_dots(GLFWwindow *window, Square *board) {
     Image *rings = (Image *)malloc(BOARD_SQUARES * sizeof(Image));
     Moves *moves = (Moves *)malloc(sizeof(Moves));
     for (int i = 0; i < BOARD_SQUARES; i++) {
-        dots[i] = load_image("./assets/dot.png", window, board[i].x, board[i].y, board[i].size);
-        rings[i] = load_image("./assets/ring.png", window, board[i].x, board[i].y, board[i].size);
+        dots[i] = create_image(TEX_DOT, window, board[i].x, board[i].y, board[i].size);
+        rings[i] = create_image(TEX_RING, window, board[i].x, board[i].y, board[i].size);
     }
     moves->dots = dots;
     moves->rings = rings;
@@ -165,6 +165,38 @@ void draw_dots(Moves *moves, uint32_t *game_state, uint64_t *legal_moves, uint16
     }
 }
 
+Legends *init_legends(GLFWwindow *window, Square *board) {
+    Legends *legends = malloc(sizeof(Legends));
+
+    int atlas_w, atlas_h;
+    legends->font_texture = load_font_texture("./assets/font.png", &atlas_w, &atlas_h);
+
+    float size = board[0].size * 0.175f;
+
+    for (int c = 0; c < BOARD_COLS; c++) {
+        char ch = 'A' + c;
+        float x_pos = board[c].size + board[c].x - size;
+        float y_pos = board[c].y;
+        legends->files[c] = create_char_quad(window, legends->font_texture, atlas_w, atlas_h, ch, x_pos, y_pos, size);
+    }
+
+    for (int r = 0; r < BOARD_ROWS; r++) {
+        char ch = '8' - r;
+        float x_pos = board[(BOARD_COLS - r - 1) * BOARD_COLS].x;
+        float y_pos = board[(BOARD_COLS - r - 1) * BOARD_COLS].size + board[(BOARD_COLS - r - 1) * BOARD_COLS].y - size;
+        legends->ranks[r] = create_char_quad(window, legends->font_texture, atlas_w, atlas_h, ch, x_pos, y_pos, size);
+    }
+
+    return legends;
+}
+
+void draw_legends(Legends *legends) {
+    for (int i = 0; i < BOARD_ROWS; i++) {
+        draw_char(&legends->files[i]);
+        draw_char(&legends->ranks[i]);
+    }
+}
+
 uint16_t get_square(GLFWwindow *window, float xpos, float ypos) {
     float x_shift, y_shift;
     int32_t board_size = get_board_size(window, &x_shift, &y_shift);
@@ -181,13 +213,13 @@ uint16_t get_square(GLFWwindow *window, float xpos, float ypos) {
     return BOARD_ROWS * row + col;
 }
 
-void clear_board(Square *board, Pieces *pieces, Moves *dots) {
+void clear_board(Square *board, Pieces *pieces, Moves *dots, Legends *legends) {
     for (int32_t i = 0; i < BOARD_SQUARES; i++) {
         destroy_shape(board[i].shape);
     }
     if (pieces != NULL) {
         for (int32_t i = 0; i < pieces->length; i++) {
-            destroy_image(pieces->pieces[i]);
+            destroy_image(&pieces->pieces[i]);
         }
         if (pieces->pieces != NULL) {
             free(pieces->pieces);
@@ -196,10 +228,13 @@ void clear_board(Square *board, Pieces *pieces, Moves *dots) {
     }
     if (dots != NULL) {
         for (int i = 0; i < BOARD_SQUARES; i++) {
-            destroy_image(dots->dots[i]);
-            destroy_image(dots->rings[i]);
+            destroy_image(&dots->dots[i]);
+            destroy_image(&dots->rings[i]);
         }
         free(dots);
+    }
+    if (legends != NULL) {
+        free(legends);
     }
     free(board);
 }

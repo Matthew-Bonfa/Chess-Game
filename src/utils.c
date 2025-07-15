@@ -71,7 +71,7 @@ void hex_to_rgbf(const char *hex, color_t *color) {
     color->b = bi / 255.0f;
 }
 
-void get_square_cooridnates_px(GLFWwindow *window, uint32_t x, uint32_t y, float size, float *vertices, uint32_t *indices) {
+void get_square_coordinates_px(GLFWwindow *window, uint32_t x, uint32_t y, float size, float *vertices, uint32_t *indices) {
     float square[SQUARE_EDGES] = {
         x, y,
         x + size, y,

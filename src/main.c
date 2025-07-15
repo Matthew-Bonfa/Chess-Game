@@ -12,6 +12,7 @@
 Square *board;
 Pieces *pieces;
 Moves *dots;
+Legends *legends;
 int32_t selected = UNSELECTED;
 
 uint32_t game_state[] = {
@@ -39,13 +40,13 @@ static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int3
 
 static void framebuffer_size_callback(GLFWwindow *window, int32_t width, int32_t height) {
     if (board != NULL) {
-        clear_board(board, pieces, dots);
+        clear_board(board, pieces, dots, legends);
     }
     board = init_board(window);
     pieces = init_pieces(window, board, game_state);
     dots = init_dots(window, board);
+    legends = init_legends(window, board);
     glViewport(0, 0, width, height);
-    // printf("Window resized: %d x %d\n", width, height);
 }
 
 static void mouse_button_callback(GLFWwindow *window, int32_t button, int32_t action, int32_t mods) {
@@ -113,9 +114,12 @@ int32_t main() {
         return -1;
     }
 
+    load_all_textures();
+
     board = init_board(window);
     pieces = init_pieces(window, board, game_state);
     dots = init_dots(window, board);
+    legends = init_legends(window, board);
 
     for (int32_t i = 0; i < BOARD_SQUARES; i++) {
         legal_moves[i] = 0;
@@ -126,6 +130,7 @@ int32_t main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         draw_board(board, selected);
+        draw_legends(legends);
         if (selected != -1) {
             draw_dots(dots, game_state, legal_moves, selected);
         }
@@ -136,7 +141,7 @@ int32_t main() {
     }
 
     cleanup_renderer();
-    clear_board(board, pieces, dots);
+    clear_board(board, pieces, dots, legends);
     free_colors();
 
     glfwDestroyWindow(window);

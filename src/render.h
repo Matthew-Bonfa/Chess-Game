@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 
 #include "image.h"
+#include "text.h"
 #include "utils.h"
 #include <GLFW/glfw3.h>
 #include <stdio.h>
@@ -22,6 +23,7 @@ void draw_shape(Shape *shape, color_t *color);
 void destroy_shape(Shape shape);
 void cleanup_renderer();
 void draw_image(Image *img);
+void draw_char(TextChar *ch);
 GLuint get_shape_shader();
 GLuint get_texture_shader();
 
