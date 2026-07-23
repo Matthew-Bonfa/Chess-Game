@@ -2,9 +2,11 @@
 #define MOVES_H
 
 #include "constants.h"
-#include "game.h"
 #include <math.h>
 
+int16_t get_piece(uint32_t *game_state, uint16_t loc);
+int16_t piece_in_direction(uint32_t *game_state, int32_t loc, Direction direction);
+uint32_t check_game_condition(uint16_t *game_condition, uint16_t piece, int32_t location);
 uint16_t check_if_pawn_moved(int16_t piece, uint16_t loc);
 uint16_t check_castles_king_side(uint32_t *game_state, uint16_t *game_condition, uint16_t color);
 uint16_t check_castles_queen_side(uint32_t *game_state, uint16_t *game_condition, uint16_t color);

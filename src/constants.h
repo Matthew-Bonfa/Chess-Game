@@ -3,6 +3,22 @@
 
 #include <stdint.h>
 
+typedef enum Color {
+    WHITE = 0,
+    BLACK = 8
+} Color;
+
+typedef enum Direction {
+    NORTH = -8,
+    NORTH_EAST = -7,
+    EAST = 1,
+    SOUTH_EAST = 9,
+    SOUTH = 8,
+    SOUTH_WEST = 7,
+    WEST = -1,
+    NORTH_WEST = -9
+} Direction;
+
 #define TRUE 1
 #define FALSE 0
 

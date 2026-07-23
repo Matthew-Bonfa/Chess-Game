@@ -2,11 +2,9 @@
 #define BOARD_H
 
 #include "constants.h"
-#include "game.h"
 #include "image.h"
 #include "render.h"
 #include "text.h"
-#include "utils.h"
 
 typedef struct {
     Shape shape;

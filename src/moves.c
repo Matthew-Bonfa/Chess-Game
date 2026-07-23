@@ -1,6 +1,7 @@
 #include "moves.h"
 
-int16_t knight_offsets[8] = {NORTH + NORTH_EAST, EAST + NORTH_EAST, EAST + SOUTH_EAST, SOUTH + SOUTH_EAST, SOUTH + SOUTH_WEST, WEST + SOUTH_WEST, WEST + NORTH_WEST, NORTH + NORTH_WEST};
+int16_t knight_offsets[8] = {NORTH + NORTH_EAST, EAST + NORTH_EAST, EAST + SOUTH_EAST, SOUTH + SOUTH_EAST,
+                             SOUTH + SOUTH_WEST, WEST + SOUTH_WEST, WEST + NORTH_WEST, NORTH + NORTH_WEST};
 int16_t bishop_directions[4] = {NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST};
 int16_t rook_directions[4] = {NORTH, EAST, SOUTH, WEST};
 int16_t all_directions[8] = {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST};
@@ -24,10 +25,73 @@ static inline void safe_unset_bit(uint64_t *legal_moves, int32_t index) {
 
 static inline void apply_moves_mask(uint32_t *game_state, uint64_t *legal_moves, uint64_t mask, uint16_t color) {
     for (int i = 0; i < BOARD_SQUARES; i++) {
-        if ((get_piece(game_state, i) & COLOR_BIT_MASK) == color && get_piece(game_state, i) != WHITE_KING && get_piece(game_state, i) != BLACK_KING) {
+        if ((get_piece(game_state, i) & COLOR_BIT_MASK) == color && get_piece(game_state, i) != WHITE_KING &&
+            get_piece(game_state, i) != BLACK_KING) {
             legal_moves[i] &= mask;
         }
     }
+}
+
+int16_t get_piece(uint32_t *game_state, uint16_t loc) {
+    if (loc < 0 || loc >= BOARD_SQUARES) {
+        return INVALID_PIECE;
+    }
+    uint16_t row = loc / BOARD_ROWS;
+    uint16_t pos = (BOARD_COLS - 1 - loc % BOARD_COLS) * SIZE_BITS;
+
+    return (game_state[row] & (PIECE_BIT_MASK << pos)) >> pos;
+}
+
+int16_t piece_in_direction(uint32_t *game_state, int32_t loc, Direction direction) {
+    do {
+        loc += direction;
+        if (loc < 0 || loc >= BOARD_SQUARES) {
+            return EMPTY_DIRECTION;
+        } else if (loc % BOARD_COLS == FIRST_COLUMN &&
+                   (direction == EAST || direction == NORTH_EAST || direction == SOUTH_EAST)) {
+            return EMPTY_DIRECTION;
+        } else if (loc % BOARD_COLS == LAST_COLUMN &&
+                   (direction == WEST || direction == NORTH_WEST || direction == SOUTH_WEST)) {
+            return EMPTY_DIRECTION;
+        } else if (loc / BOARD_ROWS == FIRST_ROW &&
+                   (direction == NORTH || direction == NORTH_EAST || direction == NORTH_WEST)) {
+            return EMPTY_DIRECTION;
+        } else if (loc / BOARD_ROWS == LAST_ROW &&
+                   (direction == SOUTH || direction == SOUTH_EAST || direction == SOUTH_WEST)) {
+            return EMPTY_DIRECTION;
+        }
+    } while (!get_piece(game_state, loc));
+    return loc;
+}
+
+uint32_t check_game_condition(uint16_t *game_condition, uint16_t piece, int32_t location) {
+    switch (piece) {
+    case WHITE_ROOK:
+        if (location == LEFT_WHITE_ROOK) {
+            return *game_condition & (BIT_MASK << WHITE_ROOK_BIT_POS);
+        } else if (location == RIGHT_WHITE_ROOK) {
+            return *game_condition & (BIT_MASK << (WHITE_ROOK_BIT_POS + 1));
+        }
+        break;
+    case BLACK_ROOK:
+        if (location == LEFT_BLACK_ROOK) {
+            return *game_condition & (BIT_MASK << BLACK_ROOK_BIT_POS);
+        } else if (location == RIGHT_BLACK_ROOK) {
+            return *game_condition & (BIT_MASK << (BLACK_ROOK_BIT_POS + 1));
+        }
+        break;
+    case WHITE_KING:
+        if (location == WHITE_KING_POS) {
+            return *game_condition & (BIT_MASK << WHITE_KING_BIT_POS);
+        }
+        break;
+    case BLACK_KING:
+        if (location == BLACK_KING_POS) {
+            return *game_condition & (BIT_MASK << BLACK_KING_BIT_POS);
+        }
+        break;
+    }
+    return 0;
 }
 
 uint16_t check_if_pawn_moved(int16_t piece, uint16_t loc) {
@@ -48,13 +112,15 @@ uint16_t check_if_pawn_moved(int16_t piece, uint16_t loc) {
 
 uint16_t check_castles_king_side(uint32_t *game_state, uint16_t *game_condition, uint16_t color) {
     if (color == WHITE) {
-        if (!check_game_condition(game_condition, WHITE_KING, WHITE_KING_POS) && !check_game_condition(game_condition, WHITE_ROOK, RIGHT_WHITE_ROOK)) {
+        if (!check_game_condition(game_condition, WHITE_KING, WHITE_KING_POS) &&
+            !check_game_condition(game_condition, WHITE_ROOK, RIGHT_WHITE_ROOK)) {
             if (get_piece(game_state, piece_in_direction(game_state, WHITE_KING_POS, EAST)) == WHITE_ROOK) {
                 return TRUE;
             }
         }
     } else {
-        if (!check_game_condition(game_condition, BLACK_KING, BLACK_KING_POS) && !check_game_condition(game_condition, BLACK_ROOK, RIGHT_BLACK_ROOK)) {
+        if (!check_game_condition(game_condition, BLACK_KING, BLACK_KING_POS) &&
+            !check_game_condition(game_condition, BLACK_ROOK, RIGHT_BLACK_ROOK)) {
             if (get_piece(game_state, piece_in_direction(game_state, BLACK_KING_POS, EAST)) == BLACK_ROOK) {
                 return TRUE;
             }
@@ -65,13 +131,15 @@ uint16_t check_castles_king_side(uint32_t *game_state, uint16_t *game_condition,
 
 uint16_t check_castles_queen_side(uint32_t *game_state, uint16_t *game_condition, uint16_t color) {
     if (color == WHITE) {
-        if (!check_game_condition(game_condition, WHITE_KING, WHITE_KING_POS) && !check_game_condition(game_condition, WHITE_ROOK, LEFT_WHITE_ROOK)) {
+        if (!check_game_condition(game_condition, WHITE_KING, WHITE_KING_POS) &&
+            !check_game_condition(game_condition, WHITE_ROOK, LEFT_WHITE_ROOK)) {
             if (get_piece(game_state, piece_in_direction(game_state, WHITE_KING_POS, WEST)) == WHITE_ROOK) {
                 return TRUE;
             }
         }
     } else {
-        if (!check_game_condition(game_condition, BLACK_KING, BLACK_KING_POS) && !check_game_condition(game_condition, BLACK_ROOK, LEFT_BLACK_ROOK)) {
+        if (!check_game_condition(game_condition, BLACK_KING, BLACK_KING_POS) &&
+            !check_game_condition(game_condition, BLACK_ROOK, LEFT_BLACK_ROOK)) {
             if (get_piece(game_state, piece_in_direction(game_state, BLACK_KING_POS, WEST)) == BLACK_ROOK) {
                 return TRUE;
             }
@@ -136,7 +204,8 @@ void get_checked_pieces(uint32_t *game_state, uint16_t loc, int16_t *pieces) {
     for (int i = 0; i < 4; i++) {
         piece_location = piece_in_direction(game_state, loc, bishop_directions[i]);
         piece = get_piece(game_state, piece_location);
-        if (piece == WHITE_EMPTY || piece == BLACK_EMPTY || piece == INVALID_PIECE || (piece & COLOR_BIT_MASK) == color) {
+        if (piece == WHITE_EMPTY || piece == BLACK_EMPTY || piece == INVALID_PIECE ||
+            (piece & COLOR_BIT_MASK) == color) {
             continue;
         }
         if (piece == WHITE_BISHOP || piece == BLACK_BISHOP || piece == WHITE_QUEEN || piece == BLACK_QUEEN) {
@@ -148,7 +217,8 @@ void get_checked_pieces(uint32_t *game_state, uint16_t loc, int16_t *pieces) {
     for (int i = 0; i < 4; i++) {
         piece_location = piece_in_direction(game_state, loc, rook_directions[i]);
         piece = get_piece(game_state, piece_location);
-        if (piece == WHITE_EMPTY || piece == BLACK_EMPTY || piece == INVALID_PIECE || (piece & COLOR_BIT_MASK) == color) {
+        if (piece == WHITE_EMPTY || piece == BLACK_EMPTY || piece == INVALID_PIECE ||
+            (piece & COLOR_BIT_MASK) == color) {
             continue;
         }
         if (piece == WHITE_ROOK || piece == BLACK_ROOK || piece == WHITE_QUEEN || piece == BLACK_QUEEN) {
@@ -189,23 +259,29 @@ void get_checked_pieces(uint32_t *game_state, uint16_t loc, int16_t *pieces) {
 void get_white_pawn_legal_moves(uint32_t *game_state, uint16_t loc, uint64_t *legal_moves, uint32_t *prev_game_state) {
     int16_t current_piece = get_piece(game_state, loc);
 
-    if ((get_piece(game_state, loc + NORTH_WEST) & COLOR_BIT_MASK) == BLACK && get_piece(game_state, loc + NORTH_WEST) != BLACK_EMPTY && (loc % BOARD_COLS) != FIRST_COLUMN) {
+    if ((get_piece(game_state, loc + NORTH_WEST) & COLOR_BIT_MASK) == BLACK &&
+        get_piece(game_state, loc + NORTH_WEST) != BLACK_EMPTY && (loc % BOARD_COLS) != FIRST_COLUMN) {
         safe_set_bit(legal_moves, loc + NORTH_WEST);
     }
-    if ((get_piece(game_state, loc + NORTH_EAST) & COLOR_BIT_MASK) == BLACK && get_piece(game_state, loc + NORTH_EAST) != BLACK_EMPTY && (loc % BOARD_COLS) != LAST_COLUMN) {
+    if ((get_piece(game_state, loc + NORTH_EAST) & COLOR_BIT_MASK) == BLACK &&
+        get_piece(game_state, loc + NORTH_EAST) != BLACK_EMPTY && (loc % BOARD_COLS) != LAST_COLUMN) {
         safe_set_bit(legal_moves, loc + NORTH_EAST);
     }
     if (get_piece(game_state, loc + NORTH) == WHITE_EMPTY || get_piece(game_state, loc + NORTH) == BLACK_EMPTY) {
         safe_set_bit(legal_moves, loc + NORTH);
-    }
-    if ((get_piece(game_state, loc + 2 * NORTH) == WHITE_EMPTY || get_piece(game_state, loc + 2 * NORTH) == BLACK_EMPTY) && !check_if_pawn_moved(WHITE_PAWN, loc)) {
-        safe_set_bit(legal_moves, loc + 2 * NORTH);
+        if ((get_piece(game_state, loc + 2 * NORTH) == WHITE_EMPTY ||
+             get_piece(game_state, loc + 2 * NORTH) == BLACK_EMPTY) &&
+            !check_if_pawn_moved(WHITE_PAWN, loc)) {
+            safe_set_bit(legal_moves, loc + 2 * NORTH);
+        }
     }
 
-    if (loc / BOARD_ROWS == WHITE_EN_PASSANT_ROW && get_piece(game_state, loc + EAST) == BLACK_PAWN && get_piece(prev_game_state, loc + EAST + 2 * NORTH) == BLACK_PAWN) {
+    if (loc / BOARD_ROWS == WHITE_EN_PASSANT_ROW && get_piece(game_state, loc + EAST) == BLACK_PAWN &&
+        get_piece(prev_game_state, loc + EAST + 2 * NORTH) == BLACK_PAWN) {
         safe_set_bit(legal_moves, loc + NORTH_EAST);
     }
-    if (loc / BOARD_ROWS == WHITE_EN_PASSANT_ROW && get_piece(game_state, loc + WEST) == BLACK_PAWN && get_piece(prev_game_state, loc + WEST + 2 * NORTH) == BLACK_PAWN) {
+    if (loc / BOARD_ROWS == WHITE_EN_PASSANT_ROW && get_piece(game_state, loc + WEST) == BLACK_PAWN &&
+        get_piece(prev_game_state, loc + WEST + 2 * NORTH) == BLACK_PAWN) {
         safe_set_bit(legal_moves, loc + NORTH_WEST);
     }
 }
@@ -213,23 +289,29 @@ void get_white_pawn_legal_moves(uint32_t *game_state, uint16_t loc, uint64_t *le
 void get_black_pawn_legal_moves(uint32_t *game_state, uint16_t loc, uint64_t *legal_moves, uint32_t *prev_game_state) {
     int16_t current_piece = get_piece(game_state, loc);
 
-    if ((get_piece(game_state, loc + SOUTH_WEST) & COLOR_BIT_MASK) == WHITE && get_piece(game_state, loc + SOUTH_WEST) != WHITE_EMPTY && (loc % BOARD_COLS) != FIRST_COLUMN) {
+    if ((get_piece(game_state, loc + SOUTH_WEST) & COLOR_BIT_MASK) == WHITE &&
+        get_piece(game_state, loc + SOUTH_WEST) != WHITE_EMPTY && (loc % BOARD_COLS) != FIRST_COLUMN) {
         safe_set_bit(legal_moves, loc + SOUTH_WEST);
     }
-    if ((get_piece(game_state, loc + SOUTH_EAST) & COLOR_BIT_MASK) == WHITE && get_piece(game_state, loc + SOUTH_EAST) != WHITE_EMPTY && (loc % BOARD_COLS) != LAST_COLUMN) {
+    if ((get_piece(game_state, loc + SOUTH_EAST) & COLOR_BIT_MASK) == WHITE &&
+        get_piece(game_state, loc + SOUTH_EAST) != WHITE_EMPTY && (loc % BOARD_COLS) != LAST_COLUMN) {
         safe_set_bit(legal_moves, loc + SOUTH_EAST);
     }
     if (get_piece(game_state, loc + SOUTH) == WHITE_EMPTY || get_piece(game_state, loc + SOUTH) == BLACK_EMPTY) {
         safe_set_bit(legal_moves, loc + SOUTH);
-    }
-    if ((get_piece(game_state, loc + 2 * SOUTH) == WHITE_EMPTY || get_piece(game_state, loc + 2 * SOUTH) == BLACK_EMPTY) && !check_if_pawn_moved(BLACK_PAWN, loc)) {
-        safe_set_bit(legal_moves, loc + 2 * SOUTH);
+        if ((get_piece(game_state, loc + 2 * SOUTH) == WHITE_EMPTY ||
+             get_piece(game_state, loc + 2 * SOUTH) == BLACK_EMPTY) &&
+            !check_if_pawn_moved(BLACK_PAWN, loc)) {
+            safe_set_bit(legal_moves, loc + 2 * SOUTH);
+        }
     }
 
-    if (loc / BOARD_ROWS == BLACK_EN_PASSANT_ROW && get_piece(game_state, loc + EAST) == WHITE_PAWN && get_piece(prev_game_state, loc + EAST + 2 * SOUTH) == WHITE_PAWN) {
+    if (loc / BOARD_ROWS == BLACK_EN_PASSANT_ROW && get_piece(game_state, loc + EAST) == WHITE_PAWN &&
+        get_piece(prev_game_state, loc + EAST + 2 * SOUTH) == WHITE_PAWN) {
         safe_set_bit(legal_moves, loc + SOUTH_EAST);
     }
-    if (loc / BOARD_ROWS == BLACK_EN_PASSANT_ROW && get_piece(game_state, loc + WEST) == WHITE_PAWN && get_piece(prev_game_state, loc + WEST + 2 * SOUTH) == WHITE_PAWN) {
+    if (loc / BOARD_ROWS == BLACK_EN_PASSANT_ROW && get_piece(game_state, loc + WEST) == WHITE_PAWN &&
+        get_piece(prev_game_state, loc + WEST + 2 * SOUTH) == WHITE_PAWN) {
         safe_set_bit(legal_moves, loc + SOUTH_WEST);
     }
 }
@@ -460,10 +542,13 @@ static void check_pin(uint32_t *game_state, uint64_t *legal_moves, int16_t loc, 
             if (next_piece == WHITE_QUEEN || next_piece == BLACK_QUEEN) {
                 uint64_t pin_mask = get_direction_mask(loc, next_location, direction);
                 legal_moves[piece_location] &= pin_mask;
-            } else if ((next_piece == WHITE_ROOK || next_piece == BLACK_ROOK) && (direction == NORTH || direction == EAST || direction == SOUTH || direction == WEST)) {
+            } else if ((next_piece == WHITE_ROOK || next_piece == BLACK_ROOK) &&
+                       (direction == NORTH || direction == EAST || direction == SOUTH || direction == WEST)) {
                 uint64_t pin_mask = get_direction_mask(loc, next_location, direction);
                 legal_moves[piece_location] &= pin_mask;
-            } else if ((next_piece == WHITE_BISHOP || next_piece == BLACK_BISHOP) && (direction == NORTH_EAST || direction == SOUTH_EAST || direction == SOUTH_WEST || direction == NORTH_WEST)) {
+            } else if ((next_piece == WHITE_BISHOP || next_piece == BLACK_BISHOP) &&
+                       (direction == NORTH_EAST || direction == SOUTH_EAST || direction == SOUTH_WEST ||
+                        direction == NORTH_WEST)) {
                 uint64_t pin_mask = get_direction_mask(loc, next_location, direction);
                 legal_moves[piece_location] &= pin_mask;
             }
@@ -491,21 +576,28 @@ void do_checks(uint32_t *game_state, uint64_t *legal_moves, uint16_t color) {
                 check_pin(game_state, legal_moves, loc, all_directions[i], color);
             }
 
-            if ((legal_moves[loc] & ((uint64_t)1 << (loc + 2 * EAST))) && (loc == WHITE_KING_POS || loc == BLACK_KING_POS)) {
-                if (checked_pieces[FIRST_CHECKED_PIECE] != INVALID_PIECE || color == WHITE && attacked_squares & white_castles_king_mask || color == BLACK && attacked_squares & black_castles_king_mask) {
+            if ((legal_moves[loc] & ((uint64_t)1 << (loc + 2 * EAST))) &&
+                (loc == WHITE_KING_POS || loc == BLACK_KING_POS)) {
+                if (checked_pieces[FIRST_CHECKED_PIECE] != INVALID_PIECE ||
+                    color == WHITE && attacked_squares & white_castles_king_mask ||
+                    color == BLACK && attacked_squares & black_castles_king_mask) {
                     legal_moves[loc] ^= (uint64_t)1 << (loc + 2 * EAST);
                 }
             }
 
-            if ((legal_moves[loc] & ((uint64_t)1 << (loc + 2 * WEST))) && (loc == WHITE_KING_POS || loc == BLACK_KING_POS)) {
-                if (checked_pieces[FIRST_CHECKED_PIECE] != INVALID_PIECE || color == WHITE && attacked_squares & white_castles_queen_mask || color == BLACK && attacked_squares & black_castles_queen_mask) {
+            if ((legal_moves[loc] & ((uint64_t)1 << (loc + 2 * WEST))) &&
+                (loc == WHITE_KING_POS || loc == BLACK_KING_POS)) {
+                if (checked_pieces[FIRST_CHECKED_PIECE] != INVALID_PIECE ||
+                    color == WHITE && attacked_squares & white_castles_queen_mask ||
+                    color == BLACK && attacked_squares & black_castles_queen_mask) {
                     legal_moves[loc] ^= (uint64_t)1 << (loc + 2 * WEST);
                 }
             }
 
             if (checked_pieces[FIRST_CHECKED_PIECE] == INVALID_PIECE) {
                 return;
-            } else if (checked_pieces[FIRST_CHECKED_PIECE] != INVALID_PIECE && checked_pieces[SECOND_CHECKED_PIECE] == INVALID_PIECE) {
+            } else if (checked_pieces[FIRST_CHECKED_PIECE] != INVALID_PIECE &&
+                       checked_pieces[SECOND_CHECKED_PIECE] == INVALID_PIECE) {
                 uint64_t check_mask = get_check_mask(game_state, legal_moves, loc, checked_pieces[FIRST_CHECKED_PIECE]);
                 apply_moves_mask(game_state, legal_moves, check_mask, color);
             } else {

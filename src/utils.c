@@ -3,9 +3,7 @@
 char cols[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
 char rows[] = {'8', '7', '6', '5', '4', '3', '2', '1'};
 
-const uint32_t square_indices[SQUARE_INDICES] = {
-    0, 1, 2,
-    2, 3, 0};
+const uint32_t square_indices[SQUARE_INDICES] = {0, 1, 2, 2, 3, 0};
 
 char *load_shader_source(const char *filename) {
     FILE *file = fopen(filename, "rb");
@@ -71,12 +69,9 @@ void hex_to_rgbf(const char *hex, color_t *color) {
     color->b = bi / 255.0f;
 }
 
-void get_square_coordinates_px(GLFWwindow *window, uint32_t x, uint32_t y, float size, float *vertices, uint32_t *indices) {
-    float square[SQUARE_EDGES] = {
-        x, y,
-        x + size, y,
-        x + size, y + size,
-        x, y + size};
+void get_square_coordinates_px(GLFWwindow *window, uint32_t x, uint32_t y, float size, float *vertices,
+                               uint32_t *indices) {
+    float square[SQUARE_EDGES] = {x, y, x + size, y, x + size, y + size, x, y + size};
 
     for (int32_t i = 0; i < SQUARE_EDGES / 2; ++i) {
         convert_to_ndc(window, square + i * 2, square + i * 2 + 1);

@@ -127,14 +127,8 @@ void draw_char(TextChar *ch) {
     glBindVertexArray(0);
 }
 
-void cleanup_renderer() {
-    glDeleteProgram(shape_shader_program);
-}
+void cleanup_renderer() { glDeleteProgram(shape_shader_program); }
 
-GLuint get_shape_shader() {
-    return shape_shader_program;
-}
+GLuint get_shape_shader() { return shape_shader_program; }
 
-GLuint get_texture_shader() {
-    return texture_shader_program;
-}
+GLuint get_texture_shader() { return texture_shader_program; }

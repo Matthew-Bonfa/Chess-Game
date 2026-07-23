@@ -59,9 +59,7 @@ void load_all_textures() {
     textures[TEX_FONT] = load_texture("./assets/font.png");
 }
 
-static GLuint get_texture(TextureType type) {
-    return textures[type];
-}
+static GLuint get_texture(TextureType type) { return textures[type]; }
 
 Image create_image(TextureType texture_id, GLFWwindow *window, uint32_t x, uint32_t y, float size) {
     Image img;

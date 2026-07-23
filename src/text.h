@@ -21,7 +21,8 @@ typedef struct {
 } TextChar;
 
 GLuint load_font_texture(const char *filepath, int *width, int *height);
-TextChar create_char_quad(GLFWwindow *window, GLuint font_tex, int atlas_width, int atlas_height, char c, uint32_t x_px, uint32_t y_px, float size_px);
+TextChar create_char_quad(GLFWwindow *window, GLuint font_tex, int atlas_width, int atlas_height, char c, uint32_t x_px,
+                          uint32_t y_px, float size_px);
 void destroy_char(TextChar *ch);
 
 #endif
