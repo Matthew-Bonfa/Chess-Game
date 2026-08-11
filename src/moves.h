@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include <math.h>
+#include <stdlib.h>
 
 int16_t get_piece(uint32_t *game_state, uint16_t loc);
 int16_t piece_in_direction(uint32_t *game_state, int32_t loc, Direction direction);

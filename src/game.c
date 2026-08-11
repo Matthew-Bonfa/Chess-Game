@@ -1,6 +1,6 @@
 #include "game.h"
 
-static void move_piece(uint32_t *game_state, uint16_t loc, uint16_t dest) {
+void move_piece(uint32_t *game_state, uint16_t loc, uint16_t dest) {
     int32_t piece = (int32_t)get_piece(game_state, loc);
     if (piece == WHITE_EMPTY || piece == BLACK_EMPTY) {
         return;
@@ -73,7 +73,7 @@ static void do_pawn_promotion(uint32_t *game_state, uint16_t loc, uint16_t dest)
             value = 'q';
             break;
         }
-        if (sscanf_s(line, " %c", &value) == 1) {
+        if (sscanf(line, " %c", &value) == 1) {
             if (value == 'q' || value == 'r' || value == 'b' || value == 'k') {
                 break;
             }

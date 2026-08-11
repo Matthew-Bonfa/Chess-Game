@@ -72,7 +72,7 @@ static void mouse_button_callback(GLFWwindow *window, int32_t button, int32_t ac
     }
 }
 
-void free_client(Client_t* client) {
+void free_client(Client_t *client) {
     cleanup_renderer();
     clear_board(board, pieces, dots, legends);
     free_colors();
@@ -84,11 +84,20 @@ void free_client(Client_t* client) {
     return;
 }
 
-Client_t* init_client() {
+Client_t *init_client() {
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         return NULL;
     }
+
+    // hints for mac
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // REQUIRED FOR MAC!
+#endif
 
     GLFWwindow *window = glfwCreateWindow(1000, 1000, "Chess Game", NULL, NULL);
     if (!window) {
@@ -129,13 +138,14 @@ Client_t* init_client() {
     }
     update_legal_moves(game_state, &game_condition, legal_moves, prev_game_state, color_to_move);
 
-    Client_t* client = malloc(sizeof(Client_t));
-    if (client == NULL) return NULL;
+    Client_t *client = malloc(sizeof(Client_t));
+    if (client == NULL)
+        return NULL;
     client->window = window;
     return client;
 }
 
-void run_client(Client_t* client) {
+void run_client(Client_t *client) {
     while (!glfwWindowShouldClose(client->window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
